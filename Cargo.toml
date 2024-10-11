@@ -1,0 +1,13 @@
+[package]
+name = "chess1"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[build]
+rustflags = [
+    "-A dead_code",          # Allow dead code
+    "-A unused_variables",   # Allow unused variables
+    "-A unused_imports"      # Allow unused imports
+]
