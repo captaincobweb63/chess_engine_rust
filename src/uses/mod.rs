@@ -5,4 +5,4 @@
 // ENDDEBUG
 
 pub mod constants;
-
+pub mod evaluate_pawn_structure;

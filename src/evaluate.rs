@@ -1,7 +1,7 @@
 
 use std:: cmp::min;
 
-use crate::uses::constants::{*};
+use crate::uses::{constants::{*},evaluate_pawn_structure::{*}};
 
 pub fn evaluate_board(boardstate: &[[u32; 8]; 8]) -> f32
 {
