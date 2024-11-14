@@ -4,6 +4,5 @@
 
 // ENDDEBUG
 
-pub mod piece;
 pub mod constants;
 
