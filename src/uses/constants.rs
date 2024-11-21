@@ -14,3 +14,4 @@ pub const BKNIGHT : u32 = 9;
 pub const BBISHOP : u32 = 10;
 pub const BQUEEN : u32 = 11;
 pub const BKING : u32 = 12;
+pub const EMPTY : u32 = 0;

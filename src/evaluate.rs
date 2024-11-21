@@ -13,16 +13,34 @@ pub fn evaluate_board(boardstate: &[[u32; 8]; 8]) -> f32
     {
         for col_i in 0..width
         {
-            let code: u32;
-            let pos: [u32; 2];
-            let color: bool;
-            code = boardstate[row_i as usize][col_i as usize];
-            color = code <= 6;
-            pos = [row_i, col_i];
+            let code: u32 = boardstate[row_i as usize][col_i as usize];
+            if code > 0
+            {
+                let mut pos: [u32; 2];
+                let color: bool;
 
-            score += evaluate_one_piece(color, code%7 , pos);
+                color = code <= 6;
+                pos = [row_i, col_i];
+
+
+                // normalise board position so like black and white talking about depth as opposite sides
+
+                if !color
+                {
+                    pos=[7-pos[0],7-pos[1]];
+                }
+                
+                pos = [pos[0]+1,pos[1]+1];
+
+            
+
+                score += (evaluate_one_piece(color,(((code-1)%6)+1 ), pos));
+            }
         }   
     }
+
+    score += (evaluate_pawn_structure(boardstate))*10f32;
+
     return score;
 
 }
@@ -46,13 +64,13 @@ fn score_piece_position(code: u32,pos:[u32;2]) -> f32
 
     // codes from the obsidian table - check it yeah
     match code {
-        1 => score_pawn_pos(pos),    // Pawn
-        3 => score_knight_pos(pos),  // Knight
-        4 => score_bishop_pos(pos),  // Bishop
-        5 => score_rook_pos(pos),    // Rook
-        6 => score_queen_pos(pos),   // Queen
-        7 => score_king_pos(pos),    // King
-        _ => 0.0,  // Empty so no score ig
+        WPAWN    => score_pawn_pos(pos),    // Pawn
+        WKNIGHT  => score_knight_pos(pos),  // Knight
+        WBISHOP  => score_bishop_pos(pos),  // Bishop
+        WROOK    => score_rook_pos(pos),    // Rook
+        WQUEEN   => score_queen_pos(pos),   // Queen
+        WKING    => score_king_pos(pos),    // King
+        _        => 0.0,// Empty so no score ig
     }
 
     
