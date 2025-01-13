@@ -1,18 +1,18 @@
 use std::cmp::min;
-use super::constants;
+use super::constants::{self, Board, SIZE};
 
-pub fn evaluate_pawn_structure(boardstate: &[[u32; 8]; 8]) -> f32
+pub fn evaluate_pawn_structure(boardstate: &Board) -> f32
 {
-    let board: [[u32; 8]; 8] = parse(boardstate);
+    let board: Board = parse(boardstate);
     let mut score = 0f32;
-    for rank in 0..8
+    for rank in 0..SIZE as usize
     {
-        for file in 0..8
+        for file in 0..SIZE as usize
         {
             let color: u32 = board[rank][file];
             if color > 0{
                 println!("{}",color);
-                score += dbg!(evaluate_pawn(&board, rank as u32, file as u32, color));
+                score += evaluate_pawn(&board, rank as u32, file as u32, color);
             }
         }
     }
@@ -20,9 +20,9 @@ pub fn evaluate_pawn_structure(boardstate: &[[u32; 8]; 8]) -> f32
 
 }
 
-fn parse(boardstate: &[[u32; 8]; 8]) -> [[u32; 8]; 8]
+fn parse(boardstate: &Board) -> Board
 {
-    let mut board: [[u32; 8]; 8] = *boardstate;
+    let mut board: Board = *boardstate;
     for i in 0..8{
         for j in 0..8{
             if boardstate[i][j] == constants::WPAWN
@@ -42,22 +42,22 @@ fn parse(boardstate: &[[u32; 8]; 8]) -> [[u32; 8]; 8]
     board
 }
 
-fn evaluate_pawn(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32) -> f32
+fn evaluate_pawn(board: &Board, row: u32, col:u32, color: u32) -> f32
 {
     let mut score = 0f32;
 
-    //if is_isolated(board, row, col, color){score -= 0.5}
-    //if is_doubled(board, row, col, color){score -= 0.3}
+    if is_isolated(board, row, col, color){score -= 0.5}
+    if is_doubled(board, row, col, color){score -= 0.3}
     if is_backward(board, row, col, color){score -= 0.5}
-    //if is_passed(board, row, col, color){score += 0.5}
-    //if is_connected(board, row, col, color){score += 0.5}
+    if is_passed(board, row, col, color){score += 0.5}
+    if is_connected(board, row, col, color){score += 0.5}
     
     score *( -((2*color) as f32-3f32))
 }
 
 
 
-fn is_isolated(board: &[[u32; 8]; 8], _row: u32, col:u32, color: u32)-> bool
+fn is_isolated(board: &Board, _row: u32, col:u32, color: u32)-> bool
 {
     //Check adjacent files for pawns
     
@@ -78,7 +78,7 @@ fn is_isolated(board: &[[u32; 8]; 8], _row: u32, col:u32, color: u32)-> bool
 
 }
 
-fn is_doubled(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32)-> bool
+fn is_doubled(board: &Board, row: u32, col:u32, color: u32)-> bool
 {
     //Check if theres another pawn of the same color in this file
 
@@ -86,7 +86,7 @@ fn is_doubled(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32)-> bool
 
 }
 
-fn is_backward(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32)-> bool
+fn is_backward(board: &Board, row: u32, col:u32, color: u32)-> bool
 {
     // Has no support and is alone in its file
 
@@ -96,12 +96,12 @@ fn is_backward(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32)-> bool
     
     for r in ((direction)+row as i32)..(4-(4*direction))
     {
-        if board[r as usize][col as usize] == color{false;}
+        if board[r as usize][col as usize] == color{return false;}
     }
     true
 }
 
-fn is_passed(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32)-> bool
+fn is_passed(board: &Board, row: u32, col:u32, color: u32)-> bool
 {
     // Passed pawn has no opposing pawn in its path
 
@@ -112,12 +112,12 @@ fn is_passed(board: &[[u32; 8]; 8], row: u32, col:u32, color: u32)-> bool
 
     for r in ((direction)+row as i32)..(4-(4*direction))
     {
-        if ((back_col)..(min(8,col+2))).any(| rank: u32| board[rank as usize][r as usize] == o_color){false;}
+        if ((back_col)..(min(8,col+2))).any(| rank: u32| board[rank as usize][r as usize] == o_color){return false;}
     }
     true
 }
 
-fn is_connected(board: &[[u32; 8]; 8], _row: u32, col:u32, color: u32)-> bool
+fn is_connected(board: &Board, _row: u32, col:u32, color: u32)-> bool
 {
     // Connected pawn is any friendly in the same or neighbouring row
 
@@ -126,7 +126,7 @@ fn is_connected(board: &[[u32; 8]; 8], _row: u32, col:u32, color: u32)-> bool
     {
         if file <8
         {
-            if (adjacent_files[0]..min(8,col+2)).any(&| rank| board[rank as usize][col as usize] == color){true;}
+            if (adjacent_files[0]..min(8,col+2)).any(&| rank| board[rank as usize][col as usize] == color){return true;}
         }
     }
     false

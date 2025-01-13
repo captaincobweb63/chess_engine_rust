@@ -1,4 +1,7 @@
 
+pub type Board = [[u32; 8]; 8];
+pub type Moves = Vec<Board>;
+
 pub const TWOROOTTWO: f32 = 2.82842712475;
 pub const SCORETABLE:[f32; 7] = [0.0,0.5,2.5,1.5,1.7,4.5,100.0];
 
@@ -15,3 +18,7 @@ pub const BBISHOP : u32 = 10;
 pub const BQUEEN : u32 = 11;
 pub const BKING : u32 = 12;
 pub const EMPTY : u32 = 0;
+
+pub const PIECENUM: u32 = 12;
+pub const SIZE:u32 = 8;
+pub const SQUARES: u32 = SIZE*SIZE;

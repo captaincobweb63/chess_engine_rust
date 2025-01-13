@@ -1,13 +1,12 @@
-use std::{collections::HashMap, result};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use csv::ReaderBuilder;
-use super::constants::{self, BBISHOP, BKING, BKNIGHT, BPAWN, BQUEEN, BROOK, EMPTY, WBISHOP, WKING, WKNIGHT, WPAWN, WQUEEN, WROOK};
-
-pub fn read_csv(path: &str) -> Result<[[u32; 8]; 8],Box<dyn Error>>
+use super::constants::{*};
+pub fn read_board_csv(path: &str) -> Result<Board,Box<dyn Error>>
 {
 
-    let mut board: [[u32; 8]; 8] = [[0;8];8];
+    let mut board: Board = [[0;8];8];
 
     let mut dict=HashMap::new();
 
@@ -63,4 +62,47 @@ pub fn read_csv(path: &str) -> Result<[[u32; 8]; 8],Box<dyn Error>>
 
     Ok(board)
 
+}
+
+pub fn read_zcode_board(path: &str) -> Result<[[[u64; PIECENUM as usize]; SIZE as usize]; SIZE as usize], Box<dyn Error>>
+{
+    let mut keys: Vec<u64> = vec![];
+
+    
+    let file = File::open(path).expect("Error reading csv");
+    
+    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
+
+    for record in rdr.records()
+    {
+        let value = record?;
+
+        if let Some(hex_str) = value.get(0)
+        {
+            if let Ok(hex_value) = u64::from_str_radix(hex_str,16)
+            {
+                keys.push(hex_value);
+            }else {
+                eprintln!("Error parsing hex value: {}", hex_str);
+            }
+        }
+    }
+
+    let mut keys_arr : [[[u64; PIECENUM as usize]; SIZE as usize]; SIZE as usize] = [[[0 ;PIECENUM as usize]; SIZE as usize]; SIZE as usize];
+    
+    
+    for i in 0..(PIECENUM) as usize
+    {
+        for j in 0..SIZE as usize
+        {
+            for k in 0..SIZE as usize
+            {
+                let line = (64*i)+(8*j)+k;
+
+                keys_arr[i][j][k] = keys[line];
+
+            }
+        }
+    }
+    Ok(keys_arr)
 }

@@ -3,7 +3,7 @@ use std:: cmp::min;
 
 use crate::uses::{constants::{*},evaluate_pawn_structure::{*}};
 
-pub fn evaluate_board(boardstate: &[[u32; 8]; 8]) -> f32
+pub fn evaluate_board(boardstate: &Board) -> f32
 {
     let mut score: f32 = 0.;
     let width: u32 = boardstate[0].len() as u32;
@@ -19,7 +19,7 @@ pub fn evaluate_board(boardstate: &[[u32; 8]; 8]) -> f32
                 let mut pos: [u32; 2];
                 let color: bool;
 
-                color = code <= 6;
+                color = code < BPAWN;
                 pos = [row_i, col_i];
 
 
@@ -34,7 +34,7 @@ pub fn evaluate_board(boardstate: &[[u32; 8]; 8]) -> f32
 
             
 
-                score += (evaluate_one_piece(color,(((code-1)%6)+1 ), pos));
+                score += evaluate_one_piece(color,((code-1)%6)+1, pos);
             }
         }   
     }
@@ -83,11 +83,11 @@ fn score_king_pos(position: [u32;2]) -> f32{
     let file: u32 = position[1]+1;
 
     //Corner
-    if rank == 1  && (file == 1 && file == 8)
+    if rank == 1  && (file == 1 || file == 8)
     {
         return 0.5
     }
-    //Too deep ;)
+    //Too deep 
     if rank >=6
     {
         -0.2
