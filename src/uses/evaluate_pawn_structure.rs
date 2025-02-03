@@ -11,7 +11,6 @@ pub fn evaluate_pawn_structure(boardstate: &Board) -> f32
         {
             let color: u32 = board[rank][file];
             if color > 0{
-                println!("{}",color);
                 score += evaluate_pawn(&board, rank as u32, file as u32, color);
             }
         }
@@ -54,7 +53,6 @@ fn evaluate_pawn(board: &Board, row: u32, col:u32, color: u32) -> f32
     
     score *( -((2*color) as f32-3f32))
 }
-
 
 
 fn is_isolated(board: &Board, _row: u32, col:u32, color: u32)-> bool

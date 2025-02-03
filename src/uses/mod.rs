@@ -12,3 +12,4 @@ pub mod evaluate;
 pub mod find_moves;
 pub mod search;
 pub mod minimax;
+pub mod debug_tools;

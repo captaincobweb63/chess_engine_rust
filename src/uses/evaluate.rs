@@ -1,26 +1,27 @@
 
-use std:: cmp::min;
+use std::cmp::min;
 
-use crate::uses::{constants::{*},evaluate_pawn_structure::{*}};
+use crate::uses::{constants::{*},evaluate_pawn_structure::{*},find_moves::find_moves};
 
-pub fn evaluate_board(boardstate: &Board) -> f32
+pub fn evaluate_board(boardstate: &Board, verbose: bool) -> f32
 {
     let mut score: f32 = 0.;
+    score += (0.1)*(find_moves(boardstate, true, verbose).len() as f32 - find_moves(boardstate, false, verbose).len() as f32);
     let width: u32 = boardstate[0].len() as u32;
     let height: u32 = boardstate.len() as u32;
 
-    for row_i in 0..height  
+    for x in 0..width  
     {
-        for col_i in 0..width
+        for y in 0..height
         {
-            let code: u32 = boardstate[row_i as usize][col_i as usize];
+            let code: u32 = boardstate[y as usize][x as usize];
             if code > 0
             {
                 let mut pos: [u32; 2];
                 let color: bool;
 
                 color = code < BPAWN;
-                pos = [row_i, col_i];
+                pos = [y, x];
 
 
                 // normalise board position so like black and white talking about depth as opposite sides
@@ -30,7 +31,6 @@ pub fn evaluate_board(boardstate: &Board) -> f32
                     pos=[7-pos[0],7-pos[1]];
                 }
                 
-                pos = [pos[0]+1,pos[1]+1];
 
             
 
@@ -39,7 +39,7 @@ pub fn evaluate_board(boardstate: &Board) -> f32
         }   
     }
 
-    score += (evaluate_pawn_structure(boardstate))*10f32;
+    score += (evaluate_pawn_structure(boardstate))*2f32;
 
     return score;
 
@@ -64,12 +64,12 @@ fn score_piece_position(code: u32,pos:[u32;2]) -> f32
 
     // codes from the obsidian table - check it yeah
     match code {
-        WPAWN    => score_pawn_pos(pos),    // Pawn
-        WKNIGHT  => score_knight_pos(pos),  // Knight
-        WBISHOP  => score_bishop_pos(pos),  // Bishop
-        WROOK    => score_rook_pos(pos),    // Rook
-        WQUEEN   => score_queen_pos(pos),   // Queen
-        WKING    => score_king_pos(pos),    // King
+        WPAWN    => score_pawn_pos(pos)*1.0,    // Pawn
+        WKNIGHT  => score_knight_pos(pos)*1.0,  // Knight
+        WBISHOP  => score_bishop_pos(pos)*1.0,  // Bishop
+        WROOK    => score_rook_pos(pos)*1.0,    // Rook
+        WQUEEN   => score_queen_pos(pos)*1.0,   // Queen
+        WKING    => score_king_pos(pos)*2.0,    // King
         _        => 0.0,// Empty so no score ig
     }
 
@@ -125,6 +125,7 @@ fn score_bishop_pos(position: [u32;2]) -> f32{
 
     let rank: u32 = position[0]+1;
     let file: u32 = position[1]+1;
+
     
     //Long diagonals
     let d_r: f32 = min(rank,8-rank) as f32;

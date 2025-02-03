@@ -40,7 +40,6 @@ pub fn read_board_csv(path: &str) -> Result<Board,Box<dyn Error>>
                 let mut i = 0_usize;
                 for piece in record.iter()
                 {
-                    println!("{}",piece);
                     let code = dict.get(piece).cloned().unwrap_or(0);
                     row[i]=code;
                     i+=1;
@@ -97,9 +96,10 @@ pub fn read_zcode_board(path: &str) -> Result<[[[u64; PIECENUM as usize]; SIZE a
         {
             for k in 0..SIZE as usize
             {
-                let line = (64*i)+(8*j)+k;
+                let line = (64*k)+(8*j)+i;
 
-                keys_arr[i][j][k] = keys[line];
+                let temp = keys[line];
+                keys_arr[k][j][i] = temp;
 
             }
         }

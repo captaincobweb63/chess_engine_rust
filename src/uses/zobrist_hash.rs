@@ -11,9 +11,9 @@ pub struct ZobristHashTable
 
 impl ZobristHashTable
 {
-    fn new() -> ZobristHashTable
+    pub fn new() -> ZobristHashTable
     {
-        let path = "path";
+        let path = "zhash.csv";
 
         let z = ZobristHashTable{table: HashMap::new(), keys: importer::read_zcode_board(path).expect("Error importing keys")};
 
@@ -44,8 +44,9 @@ impl ZobristHashTable
         for i in 0..(SIZE as usize)
         {for j in 0..(SIZE as usize){
             let p: usize = boardstate[i][j] as usize;
-            let key = self.keys[i][j][p];
-            hash = hash.bitxor(key);
+            let to_hash = if p==0 {0}else{self.keys[i][j][p-1]};
+
+            hash = hash.bitxor(to_hash);
         }}
 
         return hash;

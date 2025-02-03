@@ -1,9 +1,11 @@
 
+
+
 pub type Board = [[u32; 8]; 8];
 pub type Moves = Vec<Board>;
 
 pub const TWOROOTTWO: f32 = 2.82842712475;
-pub const SCORETABLE:[f32; 7] = [0.0,0.5,2.5,1.5,1.7,4.5,100.0];
+pub const SCORETABLE:[f32; 7] = [0.0,0.5,2.5,1.5,1.7,4.5,1000.0];
 
 pub const WPAWN : u32 = 1;
 pub const WROOK : u32 = 2;

@@ -2,12 +2,16 @@ use std::{usize, vec};
 
 use crate::{BROOK, WBISHOP, WKING, WKNIGHT, WROOK};
 
-use super::constants::{Board, Moves, BPAWN, EMPTY, SIZE, WPAWN, WQUEEN};
+use super::{constants::{Board, Moves, BPAWN, EMPTY, SIZE, WPAWN, WQUEEN}, debug_tools};
 
 
-pub fn find_moves(board: &Board, to_move: bool) -> Vec<Board>
+pub fn find_moves(board: &Board, to_move: bool, verbose: bool) -> Vec<Board>
 {
-    let moves : Vec<Board> = vec![];
+
+    
+    //let verbose = false;
+    
+    let mut moves : Vec<Board> = vec![];
 
     for rank in 0..SIZE as usize
     {
@@ -19,22 +23,27 @@ pub fn find_moves(board: &Board, to_move: bool) -> Vec<Board>
             if to_move == (piece<BPAWN)
             {
                 let color: bool =  to_move;//Is white?
-                piece = ((piece-1)%6)+1;
+                piece = (((piece as i32 -1)%6)+1) as u32;
                 
                 let pos = (rank,file);
 
+                let board_use: &Board = &(board.clone());
+
                 match piece
                 {
-                    WPAWN => return pawn_moves(board,pos, color),
-                    WROOK => return rook_moves(board, pos, color),
-                    WKNIGHT => return knight_moves(board, pos, color),
-                    WBISHOP => return bishop_moves(board, pos, color),
-                    WQUEEN => return queen_moves(board, pos, color),
-                    WKING => return king_moves(board, pos, color),
+                    WPAWN => moves.append(&mut pawn_moves(board_use,pos, color)),
+                    WROOK => moves.append(&mut rook_moves(board_use, pos, color)),
+                    WKNIGHT => moves.append(&mut knight_moves(board_use, pos, color)),
+                    WBISHOP => moves.append(&mut bishop_moves(board_use, pos, color)),
+                    WQUEEN => moves.append(&mut queen_moves(board_use, pos, color)),
+                    WKING => moves.append(&mut king_moves(board_use, pos, color)),
 
-                    _ => return vec![],
-
+                    _ => ()
                 }
+                if verbose {for m in moves.clone()
+                {
+                    println!("Found move:\n{}",debug_tools::format_board(m))
+                }}
             }
         }
     }
@@ -54,28 +63,29 @@ fn pawn_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
     let mut moves:Moves = vec![];
     let forwards: usize;
 
-    let (x,y) = pos;
+    let (y,x) = pos;
 
-    if color
+    if color//Set the vector for forwards movement
     {
         forwards = pos.0+1;
     }else{
-        forwards = pos.0-1;
+        forwards = pos.0.saturating_sub(1);
     }
 
     let mut piece: u32 = board[pos.0][pos.1];
-    if forwards == 0 || forwards == 7{piece+=WQUEEN-WPAWN;}
+    if forwards == 0 || forwards == 7{piece+=WQUEEN-WPAWN;} // handles promotion
 
     
-    if (board[forwards][pos.1-1]>=BPAWN) ^ !color
+    if pos.1.saturating_sub(1) != pos.1 && ((board[forwards][pos.1.saturating_sub(1)]>=BPAWN) ^ !color) && board[forwards][pos.1.saturating_sub(1)] != EMPTY// if isn't at the low edge & (there is)
     {
         let mut nb: Board = board.clone();
-        nb[forwards][pos.1-1] = piece;
+
+        nb[forwards][pos.1.saturating_sub(1)] = piece;
         nb[pos.0][pos.1]=EMPTY;
 
         moves.push(nb);
     }
-    if (board[forwards][pos.1+1]>=BPAWN) ^ !color
+    if pos.1 + 1 < 8 && ((board[forwards][pos.1+1]>=BPAWN) ^ !color) && board[forwards][pos.1+1] != EMPTY
     {
         let mut nb: Board = board.clone();
         nb[forwards][pos.1+1] = piece;
@@ -84,22 +94,32 @@ fn pawn_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
         moves.push(nb);
     }
 
-    if board[forwards][pos.1] != EMPTY  
-    {
-        let mut nb: Board = board.clone();
-        nb[forwards][pos.1]=board[pos.0][pos.1];
-        nb[pos.0][pos.1]=0;
 
-        if(y == if color {1} else {6} && board[x][if color {3} else {4}] == EMPTY)
+
+    if board[forwards][pos.1] == EMPTY   
+    {
+
+        let mut nb: Board = board.clone();
+
+
+        nb[forwards][pos.1]=piece;
+        nb[pos.0][pos.1]=EMPTY;
+
+        moves.push(nb);
+
+        if y == if color {1} else {6} && board[if color {3} else {4}][x] == EMPTY
         {
             let mut nb: Board = board.clone();
 
-            nb[x][if color {3} else {4}] = board[x][y];
-            nb[x][y] = EMPTY;
+            let double_forwards = if color {3} else {4};
+            nb[double_forwards][x] = piece;
+            nb[pos.0][pos.1] = EMPTY;
 
             moves.push(nb);
         }
     }
+
+
 
     moves
 
@@ -107,194 +127,80 @@ fn pawn_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 
 fn rook_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 {
-    let piece = board[pos.0][pos.1];
+    let deltas = vec![(0,1),(1,0),(0,-1),(-1,0)];
 
-    let mut moves: Moves = vec![];
-
-    let mut directions: [Box<dyn Iterator<Item = usize>>; 4] = [
-                                Box::new(pos.0+1..=SIZE as usize),
-                                Box::new((0usize..pos.0).rev()), 
-                                Box::new(pos.1+1..SIZE as usize), 
-                                Box::new((0usize..pos.1).rev())];
-
-    for i in 0..directions.len() {
-        let mut x = pos.0;
-        let mut y = pos.1;
-        
-        let d = &mut directions[i]; // mutable
-        
-        for j in d.by_ref() {
-            if i < 2 {
-                x = j; // Update `x` for the x move
-            } else {
-                y = j; // Update `y` for the y move
-            }
-
-            if board[x][y]!=0
-            {
-                if (board[x][y]<BPAWN) ^ color
-                {
-                    let mut nb: Board = board.clone();
-                    nb[pos.0][pos.1]=EMPTY;
-                    nb[x][y]=piece;
-
-                    moves.push(nb); 
-                    break;
-                }
-            }
-
-            let mut nb: Board = board.clone();
-            nb[pos.0][pos.1]=EMPTY;
-            nb[x][y]=piece; 
-
-            moves.push(nb);
-        }
-    }
+    let moves = uncapped_moves(board, pos, color, deltas);
 
     return moves
 }
 
 fn knight_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 {
-    let mut moves: Moves = vec![];
 
-    let piece = board[pos.0][pos.1];
+    let deltas = vec![(2,1),(1,2),(-2,1),(-1,2),(2,-1),(1,-2),(-2,-1),(-1,-2)];
 
-    let ipos = (pos.0 as i32, pos.1 as i32);
+    let moves = capped_moves(board, pos, color, deltas);
 
-    let possible = [(ipos.0+2,ipos.1+1),(ipos.0+2,ipos.1-1),
-                                        (ipos.0+1,ipos.1+2),(ipos.0+1,ipos.1-2),
-                                        (ipos.0-1,ipos.1+2),(ipos.0-1,ipos.1-2),
-                                        (ipos.0-2,ipos.1+1),(ipos.0-2,ipos.1-1)];
-
-    for npos in possible
-    {
-        if (npos.0.max(npos.1)<8 && npos.0.min(npos.1)>=0) && ((board[npos.0 as usize][npos.1 as usize]>=BPAWN) ^ color)
-        {
-            let mut nb = board.clone();
-            nb[npos.0 as usize][npos.1 as usize] = piece;
-            nb[pos.0][pos.1] = EMPTY;
-
-            moves.push(nb);
-        }
-    }
-    return moves;
+    moves
 }
 
 fn bishop_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 {
-    let mut moves: Moves = vec![];
 
-    let i_pos = (pos.0 as i32, pos.1 as i32);
+    let deltas = vec![(1,1),(1,-1),(-1,1),(-1,-1)];
 
-    for i in 1..8
-    {
-        let directions = [(i_pos.0+i,i_pos.1+i), (i_pos.0+i, i_pos.1-i), (i_pos.0-i, i_pos.1+i), (i_pos.0-i, i_pos.1-i)];
-        let mut flags = [false,false,false,false];
+    let moves = uncapped_moves(board, pos, color, deltas);
 
-
-        for j in 0..4
-        {
-            if !flags[j]
-            {
-                let d = directions[j];
-                if (8 > d.0 && d.0 >= 0) && (8 > d.1 && d.0 >=0) // is the move on the board
-                {
-                    let mut nb = board.clone();
-
-                    flags[j] = board[d.0 as usize][d.1 as usize] != EMPTY; // is moving to an occupied square
-
-                    nb[d.0 as usize][d.1 as usize] = board[pos.0][pos.1];
-                    nb[pos.0][pos.1]=EMPTY;
-
-                    if (board[d.0 as usize][d.1 as usize]==EMPTY) || ((board[d.0 as usize][d.1 as usize] < BPAWN) ^ color) // is moving to an empty or capturable square
-                    {
-                        moves.push(nb);
-                    }
-                }
-                else
-                {
-                    flags[j] = true;
-                }
-            }
-        }
-
-
-        
-    }
-
-    return moves;
+    moves
 }
 
 fn queen_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 {
-    let mut moves: Moves = vec![];
 
-    moves.append(&mut rook_moves(board, pos, color));
-    moves.append(&mut bishop_moves(board, pos, color));
+    let deltas = vec![(1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1),(-1,1),(-1,-1)];
+    
+    let moves = uncapped_moves(board, pos, color, deltas);
 
-    return moves;
+    moves
 }
 
 fn king_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 {
-    let mut moves: Moves = vec![];
-    let directions = [
-        (-1, -1), (-1, 0), (-1, 1),
-        (0, -1),          (0, 1),
-        (1, -1), (1, 0), (1, 1),
-    ];
 
-    let (x, y) = pos;
+    let deltas = vec![(1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1),(-1,1),(-1,-1)];
+    let mut moves = capped_moves(board, pos, color, deltas);
 
-    for (dx, dy) in directions.iter() 
-    {
-        let nx = x as isize + dx;
-        let ny = y as isize + dy;
-        if nx >= 0 && nx < 8 && ny >= 0 && ny < 8
-        {
-            let nx = nx as usize;
-            let ny = ny as usize;
+    let y = pos.0;
+    let x = pos.1;
+    let piece = board[y][x];
 
-            if(board[nx][ny] == EMPTY)||((board[nx][ny]<BPAWN)^ color)
-            {
-                let mut nb: Board = board.clone();
-
-                nb[nx][ny] = board[x][y];
-                nb[x][y] = EMPTY;
-
-                moves.push(nb);
-            }
-        }
-    }
-
-    let home_rank: usize = if color {0} else {8};
+    let home_rank: usize = if color {0} else {7};
     let rook: u32 = if color {WROOK} else {BROOK};
 
-    if y==home_rank && x == 4
+    if y == home_rank && x == 4 // CASTLING
     {
-        if board[0][home_rank]==rook && board[1][home_rank] == EMPTY && board[2][home_rank] == EMPTY && board[3][home_rank] == EMPTY
+        if board[home_rank][0]==rook && board[home_rank][1] == EMPTY && board[home_rank][2] == EMPTY && board[home_rank][3] == EMPTY
         {
             let mut nb: Board = board.clone();
             
-            nb[2][home_rank] = board[x][y];
-            nb[3][home_rank] = board[0][home_rank];
+            nb[home_rank][2] = piece;
+            nb[home_rank][3] = board[home_rank][0];
 
-            nb[0][home_rank] = EMPTY;
-            nb[x][y] = EMPTY;
+            nb[home_rank][0] = EMPTY;
+            nb[y][x] = EMPTY;
 
             moves.push(nb);
 
         }
-        if board[7][home_rank]==rook && board[6][home_rank] == EMPTY && board[5][home_rank] == EMPTY
+        if board[home_rank][7]==rook && board[home_rank][6] == EMPTY && board[home_rank][5] == EMPTY
         {
             let mut nb: Board = board.clone();
 
-            nb[6][home_rank] = board[x][y];
-            nb[5][home_rank] = board[7][home_rank];
+            nb[home_rank][6] = piece;
+            nb[home_rank][5] = board[home_rank][7];
 
-            nb[7][home_rank] = EMPTY;
-            nb[x][y] = EMPTY;
+            nb[home_rank][7] = EMPTY;
+            nb[y][x] = EMPTY;
 
             moves.push(nb);
         }
@@ -303,5 +209,76 @@ fn king_moves(board: &Board, pos: (usize,usize), color: bool)->Vec<Board>
 
 
     return moves;
+}
 
+
+fn uncapped_moves(board: &Board, pos: (usize,usize), color: bool, deltas: Vec<(i32,i32)>) -> Vec<Board>
+{
+
+    let mut moves: Vec<Board> = vec![];
+    let piece = board[pos.0][pos.1];
+
+    for d in deltas
+    {
+        let mut safe = true;
+        let mut count = 1;
+        while safe 
+        {
+            let real_delta = (d.0*count,d.1*count);
+            
+            let mut nb = board.clone();
+
+            if (real_delta.0 + pos.0 as i32) < 0 || (real_delta.1 + pos.1 as i32) < 0 
+            || (real_delta.0 + pos.0 as i32) >= SIZE as i32|| (real_delta.1 + pos.1 as i32) >= SIZE as i32
+            {break;}
+
+            let ny = (real_delta.0 + pos.0 as i32) as usize;
+            let nx = (real_delta.1 + pos.1 as i32) as usize;
+
+
+            nb[ny][nx] = piece;
+            nb[pos.0][pos.1] = EMPTY;
+
+            if board[ny][nx] != EMPTY {safe = false;}
+
+            if board[ny][nx] == EMPTY || ((board[ny][nx] < BPAWN) ^ color)
+            {
+                moves.push(nb);
+            } 
+            count  += 1;
+        }
+    }
+
+    moves
+}
+
+fn capped_moves(board: &Board, pos: (usize,usize), color: bool, deltas: Vec<(i32,i32)>) -> Vec<Board>
+{
+
+    let mut moves: Vec<Board> = vec![];
+    let piece = board[pos.0][pos.1];
+
+    for d in deltas
+    {       
+        let mut nb = board.clone();
+
+        if !((d.0 + pos.0 as i32) < 0 || (d.1 + pos.1 as i32) < 0 
+        || (d.0 + pos.0 as i32) >= SIZE as i32|| (d.1 + pos.1 as i32) >= SIZE as i32)
+        {
+
+            let ny = (d.0 + pos.0 as i32) as usize;
+            let nx = (d.1 + pos.1 as i32) as usize;
+
+
+            nb[ny][nx] = piece;
+            nb[pos.0][pos.1] = EMPTY;
+
+            if board[ny][nx] == EMPTY || ((board[ny][nx] < BPAWN) ^ color)
+            {
+                moves.push(nb);
+            } 
+        }
+    }
+
+    moves
 }
