@@ -1,8 +1,3 @@
-// DEBUG
-
-#[allow(dead_code)]
-
-// ENDDEBUG
 
 pub mod constants;
 pub mod evaluate_pawn_structure;
@@ -13,3 +8,4 @@ pub mod find_moves;
 pub mod search;
 pub mod minimax;
 pub mod debug_tools;
+pub mod io;

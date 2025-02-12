@@ -31,10 +31,51 @@ impl Searcher
                 to_move
             }
        }
+       
+       pub fn prune(&mut self, verbose:bool)
+       {
+        let mut i = 0;
+        for board in self.moves_to_evaluate.clone()
+        {
+            let next = find_moves(&board, !self.to_move, verbose);
+
+            let mut valid = true;
+
+            for m in next 
+            {
+                let mut king_dead = true;
+                for r in m
+                {
+                    if r.contains(if self.to_move {&WKING} else {&BKING})
+                    {
+                        king_dead = false;
+                        break;
+                    }
+                }
+                if king_dead
+                {
+                    valid = false; 
+                    break;
+                }
+            }
+            if !valid
+            {
+                self.moves_to_evaluate.remove(i);
+            }
+            else{i +=1;}
+
+        }
+       }
+
 
        pub fn evaluate(&mut self, weight: f32, threshold: f32, colour: bool, verbose: bool)
        {
-            let mut best_move: Board = self.moves_to_evaluate[0];
+
+            self.prune(verbose);
+
+            if self.moves_to_evaluate.len() == 0 {return;}
+
+            let mut best_move: Board = self.moves_to_evaluate.clone()[0];
             let mut best_score: f32 = if colour{-INFINITY} else{INFINITY};
             let alpha: f32 = -INFINITY;
             let beta: f32 = INFINITY;
@@ -99,13 +140,18 @@ impl Searcher
        }
 }
 
-pub fn search_control(board: Board, depth: u32, weight: f32, threshold: f32, to_move: bool, mut threads: i32, verbose: bool) -> (Board, f32)
+pub fn search_control(board: Board, depth: u32, weight: f32, threshold: f32, to_move: bool, mut threads: i32, verbose: bool) -> Option<(Board, f32)>
 {
     let mut handles:Vec<thread::JoinHandle<()>>  = vec![];
     let global_best_move:Arc<Mutex<(Board, f32)>> = Arc::new(Mutex::new((board.clone(), if to_move {NEG_INFINITY} else {INFINITY})));
     let hashes: Arc<Mutex<ZobristHashTable>> = Arc::new(Mutex::new(ZobristHashTable::new()));   
 
     let mut possible_moves: Vec<Board> = find_moves(&board, to_move, verbose);
+
+    if possible_moves.len() == 0
+    {
+        return  None;
+    }
 
     if true && threads > possible_moves.len() as i32{println!("Thread count throttled to :{}",possible_moves.len());}
     threads = if possible_moves.len() as i32 > threads {threads} else{possible_moves.len() as i32};
@@ -150,7 +196,7 @@ pub fn search_control(board: Board, depth: u32, weight: f32, threshold: f32, to_
     }
 
     let final_move =  global_best_move.lock().unwrap();
-    return *final_move;
+    return Some(*final_move);
 
 
 }
