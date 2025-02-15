@@ -3,6 +3,7 @@
 // DEBUG
 
 use std::env;
+use std::process::exit;
 
 
 // ENDDEBUG
@@ -21,6 +22,7 @@ fn main() {
     let mut verbose = false;
     let mut headless = false;
     let mut hashing = false;
+    let mut help = false;
 
     let mut depth = 6;
     let mut weight = 0f32;
@@ -29,18 +31,20 @@ fn main() {
     let mut threshold = 10.0;
     let mut boardstring = "".to_string();
 
-    println!("{}", headless_read(importer::read_board_csv(&"/home/billdix/Documents/chess_stuff/board.csv").expect("Error importing")));
 
     for arg in args
     {
         if arg.contains("-v") {verbose = true;}
+        else if arg.contains("-h") {
+            help = true;   
+        }
         else if arg.contains("-hash"){hashing = true;}
         else if arg.contains("depth") 
         {
             let (_, value) = arg.split_once('=').expect("no argument given");
             depth = value.parse().unwrap();
         }
-        else if arg.contains("-h")
+        else if arg.contains("-hl")
         {
             headless = true;
         }
@@ -74,13 +78,36 @@ fn main() {
             threads = threads * cores as i32;
         }
 
-        else if arg.contains("board=") 
+        else if arg.contains("board") 
         {
             let (_, value) = arg.split_once('=').expect("no argument given");
             boardstring = value.to_string();
         }
     }
 
+    if help
+    {
+        println!("
+Chess Engine:\n
+\n
+-h -> help
+-hl -> Headless mode (for use by chess GUI)\n
+-v -> Verbose mode\n
+-hash -> generates a new et of hash values\n
+        \n
+depth= -> sets the depth of minimax search\n
+weight= -> sets the random weight added to values - higher value gives more random moves\n
+to_move= -> sets the colour to predict a move for (white or black)\n
+threads= -> sets the number if threads for the program to run across\n
+core_threads= -> sets a number of threads per core detected to allocate processing to - overrides threads=\n
+threshold= -> sets the threshold for alpha-beta pruning in the minimax algorithm\n
+board= -> when running headlessly, this should be given a 64-character string representing the board\n
+    x = empty,\n
+    a = white pawn, b = white knight, c = white rook, d = white bishop, e = white queen, f = white king,\n
+    g = black pawn, h = black knight, i = black rook, j = black bishop, k = black queen, l = white king.
+        ");
+        exit(0);
+    }
 
     if headless && boardstring.len() != 64 {panic!("No Position Given!\\A Stringified 64-char board must be parsed when running with '-h'");}
 
@@ -97,10 +124,6 @@ fn main() {
 
     find_moves::find_moves(&board, true, verbose);
 
-    
-    // DEBUG STUFF
-
-    env::set_var("RUST_BACKTRACE", "1");
     
 
 
