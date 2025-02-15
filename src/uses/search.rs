@@ -111,7 +111,7 @@ impl Searcher
 
                 if weight != 0.0
                 {
-                    score += rand::rng().random_range(-weight..=weight);
+                    score *= rand::rng().random_range(1.0-(weight*0.01)..=1.0+(weight*0.01));
                 }
 
 

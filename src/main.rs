@@ -34,17 +34,17 @@ fn main() {
 
     for arg in args
     {
-        if arg.contains("-v") {verbose = true;}
-        else if arg.contains("-h") {
+        if arg == "-v" {verbose = true;}
+        else if arg == "-h" {
             help = true;   
         }
-        else if arg.contains("-hash"){hashing = true;}
+        else if arg== "-hash" {hashing = true;}
         else if arg.contains("depth") 
         {
             let (_, value) = arg.split_once('=').expect("no argument given");
             depth = value.parse().unwrap();
         }
-        else if arg.contains("-hl")
+        else if arg == "-hl"
         {
             headless = true;
         }
@@ -82,6 +82,13 @@ fn main() {
         {
             let (_, value) = arg.split_once('=').expect("no argument given");
             boardstring = value.to_string();
+        }
+
+        else {
+            {
+                println!("{}",arg);
+                //panic!("Invalid Argument given: \"{}\", use \"-h\" for help",arg);
+            }
         }
     }
 
