@@ -121,7 +121,7 @@ board= -> when running headlessly, this should be given a 64-character string re
     if hashing {debug_tools::make_zhashes("zhash.csv").expect("error in gen");}
 
 
-    let path: &str = "/home/billdix/Documents/chess_stuff/board.csv";
+    let path: &str = "PATH";
 
     let board: Board = if headless {headless_format(boardstring)}else{importer::read_board_csv(path).expect("Error importing")};
 
